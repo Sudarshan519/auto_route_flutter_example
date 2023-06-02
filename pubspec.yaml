@@ -30,7 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  flutter_pkg:
+    path: ekyc
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -42,7 +43,9 @@ dependencies:
   did_change_authlocal: ^0.0.6
   local_auth: ^2.1.6
   flutter_mobile_vision_2: ^0.1.15
-  camera: ^0.10.5
+  camera: ^0.10.5 
+  better_open_file: ^3.6.4
+  translator: ^0.1.7
 dev_dependencies:
   auto_route_generator: any                
   build_runner: 
@@ -55,7 +58,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
-  google_mlkit_text_recognition: ^0.6.0
+  google_mlkit_text_recognition: any
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -69,7 +72,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
+  assets:
+    - assets/
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
