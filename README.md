@@ -15,3 +15,10 @@ For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
 # auto_route_flutter_example
+
+
+
+# Generate Routes
+flutter packages pub run build_runner build --delete-conflicting-outputs
+or
+flutter packages pub run build_runner watch

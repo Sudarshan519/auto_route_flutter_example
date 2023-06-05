@@ -1,5 +1,5 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:autoroute_app/route_gaurd/route_guard.dart';
+import 'package:autoroute_app/ignore/route_gaurd/route_guard.dart';
 
 import 'app_router.gr.dart';
 
