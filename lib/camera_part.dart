@@ -139,19 +139,29 @@ class _CameraPartState extends State<CameraPart> {
 
   extractName() {
     // name exist between 3 to 8 range
+    /// contains 3 letters
   }
   extractCardNumber() {
     //  card number exist between 1 to 5
+    // contain single word
   }
 
   extractAddresss() {
     // address exist between 7 to 14
+    // constains single word
   }
   extractDOB() {
     // dob exist between 10 to 18
+    // is in a specific format
   }
   extractPeroidOfValidity() {
-    // peroid of validity exist between last 27 to 30
+    // peroid of validity exist between last 20 to 30
+    // is in a specific format
+  }
+
+  expiryDate() {
+    // is in a specific format
+    // 20 to 24
   }
   @override
   void initState() {
