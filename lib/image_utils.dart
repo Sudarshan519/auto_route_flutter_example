@@ -34,7 +34,15 @@ cropImage(String path) async {
   return fl.path;
 }
 
-Future<imglib.Image?> getImage(String path) async {
+Future getImage(String path) async {
   var img = await imglib.decodeImageFile(path);
-  return img;
+  return Size(img!.width.toDouble(), img.height.toDouble());
+}
+
+cropedImage(String path) async {
+  var img = await imglib.decodeImageFile(path);
+  final int imgwidth = img!.width;
+  final int imgheight = img.height;
+  final cropped = imglib.copyCrop(img, x: 70, y: 30, width: 640, height: 480);
+  return cropped;
 }
