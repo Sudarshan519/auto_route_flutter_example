@@ -1,5 +1,20 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:autoroute_app/routes/app_router.gr.dart';
 import 'package:flutter/material.dart';
+
+class NavLink extends StatelessWidget {
+  const NavLink({super.key, required this.label, required this.destination});
+  final String label;
+  final PageRouteInfo destination;
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+        onTap: () {
+          context.router.replace(destination);
+        },
+        child: Text(label));
+  }
+}
 
 @RoutePage()
 class DashboardPage extends StatelessWidget {
@@ -7,7 +22,23 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      body: Row(
+        children: [
+          Column(
+            children: [
+              NavLink(label: 'Users', destination: const UsersRoute()),
+              NavLink(label: 'Posts', destination: const PostsRoute()),
+              NavLink(label: 'Settings', destination: const SettingsRoute()),
+            ],
+          ),
+          Expanded(
+            // nested routes will be rendered here
+            child: AutoRouter(),
+          )
+        ],
+      ),
+    );
   }
 }
 
@@ -34,7 +65,11 @@ class UsersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    print(context.router.stack);
+    return const Scaffold(
+      backgroundColor: Colors.blue,
+      body: SafeArea(child: Text("Users")),
+    );
   }
 }
 
@@ -44,7 +79,10 @@ class PostsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return const Scaffold(
+      backgroundColor: Colors.red,
+      body: SafeArea(child: Text("Posts")),
+    );
   }
 }
 
@@ -54,6 +92,9 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      backgroundColor: Colors.green,
+      body: SafeArea(child: InkWell(onTap: () {}, child: Text("Settings"))),
+    );
   }
 }

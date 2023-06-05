@@ -1,5 +1,5 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:autoroute_app/app_router.gr.dart';
+import 'package:autoroute_app/routes/app_router.gr.dart';
 import 'package:flutter/material.dart';
 
 bool authenticated = false;
@@ -11,6 +11,12 @@ class AuthGuard extends AutoRouteGuard {
     // true to resume/continue navigation or false to abort navigation
 
     if (authenticated) {
+      authenticated = true;
+      // we can't pop the bottom page in the navigator's stack
+      // so we just remove it from our local stack
+      router.markUrlStateForReplace();
+      router.removeLast();
+      resolver.next();
       // if user is authenticated we continue
       resolver.next(true);
     } else {

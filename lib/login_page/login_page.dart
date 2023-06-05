@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:autoroute_app/routes/app_router.gr.dart';
 import 'package:autoroute_app/route_gaurd/route_guard.dart';
 import 'package:flutter/material.dart';
 
@@ -52,6 +53,7 @@ class LoginPage extends StatelessWidget {
                 ElevatedButton(
                     onPressed: () {
                       // context.read<AuthService>().isAuthenticated = true;
+
                       onLoginResult?.call(true);
                     },
                     child: Text("Submit"))

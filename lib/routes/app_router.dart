@@ -9,20 +9,18 @@ class AppRouter extends $AppRouter {
   List<AutoRoute> get routes => [
         //HomeScreen is generated as HomeRoute because
         //of the replaceInRouteName property
-        AutoRoute(path: '*', page: UnknownRoute.page),
+        // AutoRoute(path: '*', page: UnknownRoute.page),
+        AutoRoute(page: HomeRoute.page, guards: [AuthGuard()]),
         AutoRoute(
-          page: HomeRoute.page,
+          path: '/',
+          guards: [AuthGuard()],
+          page: DashboardRoute.page,
+          children: [
+            AutoRoute(path: '', page: UsersRoute.page),
+            AutoRoute(path: 'posts', page: PostsRoute.page),
+            AutoRoute(path: 'settings', page: SettingsRoute.page),
+          ],
         ),
-        AutoRoute(
-            path: '/',
-            guards: [AuthGuard()],
-            page: DashboardRoute.page,
-            children: [
-              AutoRoute(path: 'users', page: UsersRoute.page),
-              AutoRoute(path: 'posts', page: PostsRoute.page),
-              AutoRoute(path: 'settings', page: SettingsRoute.page),
-            ],
-            initial: true),
         AutoRoute(page: LoginRoute.page, path: '/login', initial: true),
         // AutoRoute(page: LoginRoute.page, initial: true)
       ];

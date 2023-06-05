@@ -1,4 +1,4 @@
-import 'package:autoroute_app/app_router.dart';
+import 'package:autoroute_app/routes/app_router.dart';
 import 'package:flutter/material.dart';
 
 final _appRouter = AppRouter();
