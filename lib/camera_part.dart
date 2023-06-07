@@ -66,8 +66,12 @@ class _CameraPartState extends State<CameraPart> {
         if (isCameraInitialized && cameraController.value.isInitialized) {
           var file = await cameraController.takePicture();
           isrunning = false;
-          imagePath = (file.path);
-          var image = InputImage.fromFilePath(file.path);
+          cameraController.dispose();
+          isCameraInitialized = false;
+          var croppedPath = await cropImage(file.path);
+        
+          // imagePath = (croppedPath);
+          var image = InputImage.fromFilePath(croppedPath);
           var regex = RegExp(r"^(\d{4}年)+$");
           try {
             var blocs = await textRecognizer.processImage(image);
