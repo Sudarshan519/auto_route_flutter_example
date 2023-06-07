@@ -24,7 +24,7 @@ def align_text_and_extract(image_path):
         x1, y1, x2, y2 = line[0]
         position = (x1, y1, x2, y2)
         positions.append(position)
-
+        
     # Perform text alignment
     aligned_image = align_text(image, positions)
 

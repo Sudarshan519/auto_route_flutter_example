@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:autoroute_app/camera_part.dart';
+import 'package:autoroute_app/crop_image.dart';
 import 'package:autoroute_app/ignore/unknown_route/text_recognition.dart';
 import 'package:autoroute_app/recognizer/text_detector_view.dart';
 import 'package:flutter/material.dart';
@@ -22,9 +23,12 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   var cardNumber = '1234567';
   final cardType = "123456";
+
   bool showContinueDialog = false;
   final TextEditingController number = TextEditingController()
     ..text = "LD36246893EA";
+  final TextEditingController name = TextEditingController()
+    ..text = 'ADHIKARI KIYA';
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,6 +45,17 @@ class _MyAppState extends State<MyApp> {
               },
             ),
             const SizedBox(height: 20),
+            TextFormField(
+              controller: name,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => CameraExampleHome()));
+              },
+              child: Text("OPEN CAMERA"),
+            ),
             ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).push(MaterialPageRoute(
@@ -78,7 +93,10 @@ class _MyAppState extends State<MyApp> {
               child: ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => CameraPart(cardNumber: number.text)));
+                        builder: (_) => CameraPart(
+                              cardNumber: number.text,
+                              name: name.text,
+                            )));
                   },
                   child: const Text("Picture on valid card number")),
             ),

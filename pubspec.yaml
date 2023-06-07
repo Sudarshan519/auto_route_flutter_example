@@ -41,9 +41,11 @@ dependencies:
   google_ml_vision: ^0.0.8
   http: ^0.13.6
   http_interceptor: ^1.0.2
+  image_gallery_saver: ^2.0.1
   image_picker: ^0.8.7+4
   local_auth: ^2.1.6
   translator: ^0.1.7
+  video_player: ^2.6.1
 dev_dependencies:
   auto_route_generator: any
   build_runner: null

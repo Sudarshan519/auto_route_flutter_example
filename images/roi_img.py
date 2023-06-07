@@ -28,12 +28,16 @@ def find_roi(image_path):
     x, y, width, height = cv2.boundingRect(largest_contour)
 
     # Draw the bounding rectangle on the original image
+    print(x)
+    print(y)
+    print(x+width)
+    print(y+height)
     roi_image = cv2.rectangle(image.copy(), (x, y), (x + width, y + height), (0, 255, 0), 2)
     # Apply Gaussian blur to reduce noise
     blurred = cv2.GaussianBlur(roi_image, (5, 5), 0)
-
+ 
     # Perform Canny edge detection
-    edges = cv2.Canny(blurred, 50, 150)
+    edges = cv2.Canny(blurred, 10, 150)
     # Display the original image with the ROI
     # text = pytesseract.image_to_string(edges, lang='jpn')
     # print(text)
@@ -44,4 +48,6 @@ def find_roi(image_path):
     cv2.destroyAllWindows()
 
 # Call the function with the path to your image
-find_roi("images/r27a.png")
+
+
+find_roi("images/jap/20230607084043040.png")

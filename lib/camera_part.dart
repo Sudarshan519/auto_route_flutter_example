@@ -1,16 +1,21 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:translator/translator.dart';
 import 'package:autoroute_app/image_utils.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:image/image.dart' as img;
+
+RegExp dateRegex = RegExp(r"\d{4}年\d{2}月\d{2}日");
 
 class CameraPart extends StatefulWidget {
-  const CameraPart({super.key, required this.cardNumber});
+  const CameraPart({super.key, required this.cardNumber, required this.name});
   final String cardNumber;
+  final String name;
   @override
   State<CameraPart> createState() => _CameraPartState();
 }
@@ -29,6 +34,7 @@ class _CameraPartState extends State<CameraPart> {
   var dob = '';
   var expiry = '';
   var address = '';
+  var isrunning = false;
   final translator = GoogleTranslator();
   final TextRecognizer textRecognizer =
       TextRecognizer(script: TextRecognitionScript.japanese);
@@ -37,105 +43,104 @@ class _CameraPartState extends State<CameraPart> {
   Size imageSize = const Size(0, 0);
   var rowCol = [];
   void initializeCamera() async {
-    // try {
-    //   var cameras = await availableCameras();
-    //   cameraController = CameraController(cameras[0], ResolutionPreset.high);
+    try {
+      var cameras = await availableCameras();
+      cameraController = CameraController(cameras[0], ResolutionPreset.high);
 
-    //   await cameraController.initialize();
+      await cameraController.initialize();
 
-    //   cameraController.setFlashMode(FlashMode.off);
-    //   isCameraInitialized = true;
+      cameraController.setFlashMode(FlashMode.off);
+      isCameraInitialized = true;
 
-    //   setState(() {});
-    //   runtimer();
-    // } catch (e) {}
+      setState(() {});
+      runtimer();
+    } catch (e) {}
   }
 
   void recognizeText() async {
     if (recognizedBlocs.blocks.isEmpty) {
-      var file = await cameraController.takePicture();
-      // var newPath = await cropImage(file.path);    // newImage = newPath;
-      // log(file.path + "IMAGE");
-      var image = InputImage.fromFilePath(file.path);
-      var regex =
-          RegExp(r"^(\d{4}年)+$"); //(0[1-9]|1[012])月(0[1-9]|[12][0-9]|3[01])日
-      try {
-        var blocs = await textRecognizer.processImage(image);
+      if (mounted) {
+        isrunning = true;
+        var file = await cameraController.takePicture();
+        isrunning = false;
 
-        // print(blocs.text);
-        translator.translate(recognizedBlocs.text).then((value) {
-          translatedBloc = value.text;
-          // print(value.text);
-          setState(() {});
-        });
-        if (blocs.text.contains(
-                // "番号" +
-                widget.cardNumber)
-            // &&
-            //     // blocs.text.contains("RESIDENT CARD") &&
-            //     // blocs.text.contains("GOVERNMENT OF JAPAN") &&
-            //     // blocs.text.contains("NATIONALITY/REGION") &&
-            //     // blocs.text.contains("PEROID OF VALIDITY") &&
-            //     // blocs.text.contains("DATE OF BIRTH") &&
+        var image = InputImage.fromFilePath(file.path);
+        var regex = RegExp(r"^(\d{4}年)+$");
+        try {
+          var blocs = await textRecognizer.processImage(image);
 
-            //     // && blocs.text.contains("氏名")
+          // print(blocs.text);
+          // translator.translate(recognizedBlocs.text).then((value) {
+          //   translatedBloc = value.text;
+          //   // print(value.text);
+          //   setState(() {});
+          // });
+          if (blocs.text.contains(widget.cardNumber) //&&
 
-            )
-        // print(blocs.text);
-        {
-          // var regExp = RegExp(r'(\d{4}?\d\d?\d\d(\s|T)\d\d:?\d\d:?\d\d)');
-          final match = regex.firstMatch(blocs.text);
-          log(match.toString());
-          // final matchedText = match?.group(0);
-          // log(matchedText.toString());
-          // regex.firstMatch(blocs.text);
-          recognizedText = blocs.text;
-          recognizedBlocs = blocs;
+              // blocs.text.contains("日本") &&
+              // blocs.text.contains("PE") &&
+              // blocs.text.contains("DAT") &&
+              // blocs.text.contains("GOV") &&
+              // // blocs.text.contains("Permanent Resident") &&
+              // blocs.text.contains("AD")
 
-          for (var e in recognizedBlocs.blocks) {
-            if (e.text.split(' ').length == 3) {
-              print(e.cornerPoints);
-              print("${e.text}  NAMEABC");
+              ) {
+            ImageGallerySaver.saveFile(file.path);
+            imagePath = file.path;
+            // var regExp = RegExp(r'(\d{4}?\d\d?\d\d(\s|T)\d\d:?\d\d:?\d\d)');
+            final match = regex.firstMatch(blocs.text);
+            log(match.toString());
 
-              print(e.boundingBox.bottom - e.boundingBox.top);
+            recognizedText = blocs.text;
+            blocs.blocks.sort((a, b) =>
+                (a.boundingBox.top - b.boundingBox.top > 10)
+                    ? a.boundingBox.top.compareTo(b.boundingBox.top)
+                    : 0);
+            recognizedBlocs = blocs;
+
+            for (var e in recognizedBlocs.blocks) {
+              if (e.text.split(' ').length == 3) {}
+
+              if (e.text.contains("住居地")) {
+                location = e.text;
+                // print(e.text);
+                translator.translate(e.text).then(
+                    (value) => {location_en = (value.text), setState(() {})});
+              } else {
+                // print(e.text);
+                // print(false);
+              }
             }
 
-            ;
-            if (e.text.contains("住居地")) {
-              location = e.text;
-              // print(e.text);
-              translator.translate(e.text).then(
-                  (value) => {location_en = (value.text), setState(() {})});
-            } else {
-              // print(e.text);
-              // print(false);
+            // translator.translate(recognizedBlocs.text, to: 'en').then((result) =>
+            //     translated = result + ("Source: \nTranslated: $result"));
+            if (isCameraInitialized) {
+              cameraController.dispose();
+              isCameraInitialized = false;
+              setState(() {});
             }
           }
-
-          // translator.translate(recognizedBlocs.text, to: 'en').then((result) =>
-          //     translated = result + ("Source: \nTranslated: $result"));
-          // setState(() {});
+        } catch (e) {}
+      } else {
+        if (isCameraInitialized) {
+          cameraController.dispose();
+          isCameraInitialized = false;
+          setState(() {});
         }
-      } catch (e) {}
-    } else {
-      if (isCameraInitialized) {
-        cameraController.dispose();
-        isCameraInitialized = false;
-        setState(() {});
       }
     }
   }
 
   stopCamera() {
     isCameraInitialized = false;
-    cameraController.dispose();
+    if (cameraController.value.isInitialized) cameraController.dispose();
     timer.cancel();
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   void runtimer() {
     timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      recognizeText();
+      if (!isrunning) recognizeText();
     });
   }
 
@@ -145,25 +150,89 @@ class _CameraPartState extends State<CameraPart> {
     // name exist between 3 to 8 range
     /// contains 3 letters
     ///
-    var corner0 = recognizedBlocs.blocks.reduce((value, element) =>
-        value.boundingBox.top < element.boundingBox.top ? value : element);
-    var corner1 = recognizedBlocs.blocks.reduce((value, element) =>
-        value.boundingBox.left < element.boundingBox.left ? value : element);
-    var corner2 = recognizedBlocs.blocks.reduce((value, element) =>
-        value.boundingBox.right > element.boundingBox.right ? value : element);
-    var corner3 = recognizedBlocs.blocks.reduce((value, element) =>
-        value.boundingBox.bottom > element.boundingBox.bottom
+    var corner0 = recognizedBlocs.blocks
+        .firstWhere((element) => element.text.contains('日本'));
+
+    log((recognizedBlocs.blocks[0].boundingBox.top -
+            recognizedBlocs.blocks[5].boundingBox.top)
+        .toString());
+    log((corner0.boundingBox.top - recognizedBlocs.blocks[13].boundingBox.top)
+        .toString());
+    recognizedBlocs.blocks.forEach((e) {
+      log(((e.boundingBox.top - (corner0.boundingBox.top + 128)).abs() < 15)
+          .toString());
+      if (((e.boundingBox.top - (corner0.boundingBox.top + 128)).abs() < 15))
+        log(e.text);
+    });
+    log("${recognizedBlocs.blocks.firstWhere((e) => (((e.boundingBox.top - (corner0.boundingBox.top + 35)).abs() < 10))).text} NAME RECOGNIZED");
+    log("${recognizedBlocs.blocks.firstWhere((e) => (((e.boundingBox.top - (corner0.boundingBox.top + 128)).abs() < 10)) && !e.text.contains('DATE')).text} ADDRESS RECOGNIZED");
+    // log("${recognizedBlocs.blocks.firstWhere((e) => (((e.boundingBox.top - (corner0.boundingBox.top + 70)).abs() < 10))).text} DOB RECOGNIZED");
+    var pos = (recognizedBlocs.blocks.where((e) =>
+        (((e.boundingBox.top - (corner0.boundingBox.top + 265)).abs() <
+            10)))).toList();
+    log("${pos![0].text} PEROID OF STAY RECOGNIZED");
+
+    /// topleft
+    var left = corner0.boundingBox.left - 10;
+    var top = corner0.boundingBox.top;
+
+    var topright = recognizedBlocs.blocks
+        .firstWhere((element) => element.text.contains(widget.cardNumber));
+    log(topright.text);
+    log(topright.boundingBox.toString());
+
+    /// right
+    var right = topright.boundingBox.right + 10;
+
+    ///
+    var bottomCenter = recognizedBlocs.blocks.last;
+    log(bottomCenter.boundingBox.toString());
+    print(bottomCenter.text);
+    var bottom = bottomCenter.boundingBox.bottom + 10;
+
+    var height = bottom - top;
+    var width = right - left;
+    log((height / width).toString());
+
+    log((right - left).toString());
+    final int partSize = (recognizedBlocs.blocks.length / 3).ceil();
+    final int length = recognizedBlocs.blocks.length;
+
+    var nameBlock = recognizedBlocs.blocks.reduce((value, element) =>
+        (value.boundingBox.top - element.boundingBox.top).abs() <
+                ((element.boundingBox.top - element.boundingBox.top).abs())
             ? value
             : element);
-    var top1 = (corner0.boundingBox.top);
-    var left = (corner1.boundingBox.left);
-    var right = (corner2.boundingBox.right);
-    var bottom = (corner3.boundingBox.bottom);
-    var height = bottom - top1;
-    var width = right - left;
+    log(nameBlock.text);
+    recognizedBlocs.blocks
+        .removeWhere((element) => element.boundingBox.top < top);
+    recognizedBlocs.blocks
+        .removeWhere((element) => element.boundingBox.left < left);
+    recognizedBlocs.blocks
+        .removeWhere((element) => element.boundingBox.bottom > bottom);
+    recognizedBlocs.blocks
+        .removeWhere((element) => element.boundingBox.right > right);
+    // recognizedBlocs.blocks.removeWhere(
+    //     (element) => element.boundingBox.top < corner0.boundingBox.top);
+    // recognizedBlocs.blocks.removeWhere(
+    //     (element) => element.boundingBox.bottom > corner3.boundingBox.bottom);
+    // var top1 = (corner0.boundingBox.top);
+    // var left = (corner1.boundingBox.left);
+    // var right = (corner2.boundingBox.right);
+    // var bottom = (corner3.boundingBox.bottom);
+    // var height = bottom - top1;
+    // var width = right - left;
+    // print(corner0.boundingBox);
+    // print(corner0.text);
+    // print(corner1.boundingBox);
+    // print(corner1.text);
+    // print(corner2.boundingBox);
+    // print(corner2.text);
+    // print(corner3.boundingBox);
+    // print(corner3.text);
     // print(height);
     // print(width);
-    print(width / height);
+    // print(width / height);
 
     var firstblock = recognizedBlocs.blocks.first;
     // var namePosition = (firstblock.boundingBox.top + 25 * width / height);
@@ -178,7 +247,7 @@ class _CameraPartState extends State<CameraPart> {
     // }
     // print(name.text);
     var topCorner = firstblock.boundingBox.left;
-    var top = firstblock.boundingBox.top;
+    // var top = firstblock.boundingBox.top;
 
     var listContainsNames = recognizedBlocs.blocks.where((element) =>
         element.boundingBox.top < (firstblock.boundingBox.top + 80));
@@ -192,27 +261,31 @@ class _CameraPartState extends State<CameraPart> {
     //   // print(element.text);
     // });
     // print(recognizedBlocs.blocks[5].text);
-    listContainsNames.forEach((element) {
+    var nameRegex = RegExp(r'^(?!\s*$)[a-zA-Z0-9- ]{1,20}$');
+
+    for (var element in listContainsNames) {
       // print(element.boundingBox.top);
-      // print(element.text);
+
       var splittedNames = element.text.split(' ');
-      print(splittedNames);
-      if (splittedNames.length > 2) {
-        if (!element.text.startsWith("GOV")) {
-          print(splittedNames.first.length);
-          if (splittedNames.first.length <= 2) {
-            name = element.text;
-            // print(name);
-            name = name.replaceAll("${splittedNames.first} ", '');
-          } else {
-            name = element.text;
+      if (nameRegex.hasMatch(element.text)) {
+        if (splittedNames.length > 2) {
+          if (!element.text.startsWith("GOV") &&
+              !element.text.startsWith('RESIDENCE')) {
+            if (splittedNames.first.length <= 2) {
+              // name = element.text;
+              print(name);
+              name = element.text.replaceAll("${splittedNames.first} ", '');
+            } else {
+              name = element.text;
+              name = element.text;
+            }
           }
+        } else {
+          // print(element.text);
         }
-      } else {
-        // print(element.text);
       }
       ;
-    });
+    }
   }
 
   extractCardNumber() {
@@ -226,10 +299,9 @@ class _CameraPartState extends State<CameraPart> {
     var data = (recognizedBlocs.blocks
         .where((element) => element.text.contains('生年月日')));
     if (data.isNotEmpty) {
-      print(data.first.text.replaceAll('\n', ''));
-      if (data.first.text.contains('\n'))
+      if (data.first.text.contains('\n')) {
         address = (data.first.text.split('\n').first);
-      else {
+      } else {
         address = (data.first.text.split('\n').first);
       }
     }
@@ -240,8 +312,8 @@ class _CameraPartState extends State<CameraPart> {
     // dob exist between 10 to 18
     // is in a specific format
     var dates = [];
-    RegExp regex = RegExp(r"\d{4}年\d{2}月\d{2}日");
-    dates = regex
+    RegExp dateRegex = RegExp(r"\d{4}年\d{2}月\d{2}日");
+    dates = dateRegex
         .allMatches(recognizedBlocs.text)
         .map((match) => match.group(0))
         .toList();
@@ -275,7 +347,6 @@ class _CameraPartState extends State<CameraPart> {
   @override
   void dispose() {
     if (isCameraInitialized) stopCamera();
-
     super.dispose();
   }
 
@@ -300,53 +371,53 @@ class _CameraPartState extends State<CameraPart> {
 
     var dates = <String?>[];
 
-    if (recognizedBlocs.blocks.isNotEmpty) {
-      extractDOB();
-      extractPeroidOfValidity();
-      extractAddresss();
+    // if (recognizedBlocs.blocks.isNotEmpty) {
+    //   // extractName();
+    //   // extractDOB();
+    //   // extractPeroidOfValidity();
+    //   // extractAddresss();
 
-      var lowest = 0;
-      // nameIndex = recognizedBlocs.blocks.indexOf(
-      //     recognizedBlocs.blocks.firstWhere((e) => e.text.contains("NAME")));
+    //   var lowest = 0;
+    //   // nameIndex = recognizedBlocs.blocks.indexOf(
+    //   //     recognizedBlocs.blocks.firstWhere((e) => e.text.contains("NAME")));
 
-      var bottomDiff = 0.0;
-      var leftDiff = 0.0;
-      if (recognizedBlocs.blocks.isNotEmpty) {
-        for (var e in recognizedBlocs.blocks) {
-          if (e.text.contains("在居地")) location = e.text;
-          if (recognizedBlocs.blocks[nameIndex].boundingBox.bottom !=
-              e.boundingBox.bottom) {
-            var absdiff = (e.boundingBox.bottom -
-                    recognizedBlocs.blocks[nameIndex].boundingBox.bottom)
-                .abs();
-            var left = (e.boundingBox.left -
-                    recognizedBlocs.blocks[nameIndex].boundingBox.left)
-                .abs();
-            if (bottomDiff == 0) {
-              bottomDiff = absdiff;
-            } else if (leftDiff == 0) {
-              leftDiff = left;
-            } else {
-              // if (bottomDiff > absdiff) {
-              //   bottomDiff = absdiff;
-              //   var index = nameIndex = recognizedBlocs.blocks.indexOf(e);
-              //   if (recognizedBlocs.blocks[index].text != "NAME" &&
-              //       !recognizedBlocs.blocks[index].text.contains("GOV")) {
-              //     nameIndex = index;
+    //   var bottomDiff = 0.0;
+    //   var leftDiff = 0.0;
+    // if (recognizedBlocs.blocks.isNotEmpty) {
+    //   for (var e in recognizedBlocs.blocks) {
+    //       if (e.text.contains("在居地")) location = e.text;
+    //       if (recognizedBlocs.blocks[nameIndex].boundingBox.bottom !=
+    //           e.boundingBox.bottom) {
+    //         var absdiff = (e.boundingBox.bottom -
+    //                 recognizedBlocs.blocks[nameIndex].boundingBox.bottom)
+    //             .abs();
+    //         var left = (e.boundingBox.left -
+    //                 recognizedBlocs.blocks[nameIndex].boundingBox.left)
+    //             .abs();
+    //         if (bottomDiff == 0) {
+    //           bottomDiff = absdiff;
+    //         } else if (leftDiff == 0) {
+    //           leftDiff = left;
+    //         } else {
+    //           // if (bottomDiff > absdiff) {
+    //           //   bottomDiff = absdiff;
+    //           //   var index = nameIndex = recognizedBlocs.blocks.indexOf(e);
+    //           //   if (recognizedBlocs.blocks[index].text != "NAME" &&
+    //           //       !recognizedBlocs.blocks[index].text.contains("GOV")) {
+    //           //     nameIndex = index;
 
-              //     name = recognizedBlocs.blocks[index].text;
+    //           //     name = recognizedBlocs.blocks[index].text;
 
-              //     if (name.split(' ').first.length < 2) {
-              //       name = name.replaceAll(name.split(' ').first, '');
-              //     }
-              //   }
-              // }
-            }
-          }
-        }
-      }
-      extractName();
-    }
+    //           //     if (name.split(' ').first.length < 2) {
+    //           //       name = name.replaceAll(name.split(' ').first, '');
+    //           //     }
+    //           //   }
+    //           // }
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
     // print(name);
     // print(recognizedBlocs.blocks
     //     .firstWhere((e) => e.text.contains("R SHRESTHA RABINDRA"))
@@ -390,61 +461,62 @@ class _CameraPartState extends State<CameraPart> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ElevatedButton(
-                                onPressed: () async {
-                                  var file =
-                                      await ImagePicker.platform.pickImage(
-                                    source: ImageSource.gallery,
-                                  );
-                                  imagePath = file!.path;
-                                  var imageDimen = await getImage(file.path);
-                                  imageSize = imageDimen;
-                                  print(imageDimen);
-                                  var image =
-                                      InputImage.fromFilePath(file!.path);
-                                  var recognized =
-                                      await textRecognizer.processImage(image);
-                                  // print(recognized.text);
+                            // ElevatedButton(
+                            //     onPressed: () async {
+                            //       var file =
+                            //           await ImagePicker.platform.pickImage(
+                            //         source: ImageSource.camera,
+                            //       );
+                            //       imagePath = file!.path;
+                            //       var imageDimen = await getImage(file.path);
+                            //       imageSize = imageDimen;
+                            //       print(imageDimen);
+                            //       var image =
+                            //           InputImage.fromFilePath(file!.path);
+                            //       var recognized =
+                            //           await textRecognizer.processImage(image);
+                            //       // print(recognized.text);
 
-                                  print(recognized.blocks.length);
+                            //       print(recognized.blocks.length);
 
-                                  recognized.blocks.sort((a, b) =>
-                                      (a.boundingBox.top - b.boundingBox.top >
-                                              5)
-                                          ? a.boundingBox.top
-                                              .compareTo(b.boundingBox.top)
-                                          : 0);
-                                  recognizedBlocs = recognized;
-                                  // var rightElements = recognizedBlocs;
-                                  // var index = recognizedBlocs.blocks.firstWhere(
-                                  //     (element) =>
-                                  //         element.text.contains('NAME'));
-                                  // rightElements.blocks.sort((a, b) => b
-                                  //     .boundingBox.right
-                                  //     .compareTo(a.boundingBox.right));
-                                  // rightElements.blocks.forEach((element) {
-                                  //   print(element.text);
-                                  // });
-                                  // recognizedBlocs.blocks.sort((a, b) => a
-                                  //     .boundingBox.left
-                                  //     .compareTo(b.boundingBox.left));
+                            //       recognized.blocks.sort((a, b) =>
+                            //           (a.boundingBox.top - b.boundingBox.top >
+                            //                   5)
+                            //               ? a.boundingBox.top
+                            //                   .compareTo(b.boundingBox.top)
+                            //               : 0);
+                            //       recognizedBlocs = recognized;
+                            //       // var rightElements = recognizedBlocs;
+                            //       // var index = recognizedBlocs.blocks.firstWhere(
+                            //       //     (element) =>
+                            //       //         element.text.contains('NAME'));
+                            //       // rightElements.blocks.sort((a, b) => b
+                            //       //     .boundingBox.right
+                            //       //     .compareTo(a.boundingBox.right));
+                            //       // rightElements.blocks.forEach((element) {
+                            //       //   print(element.text);
+                            //       // });
+                            //       // recognizedBlocs.blocks.sort((a, b) => a
+                            //       //     .boundingBox.left
+                            //       //     .compareTo(b.boundingBox.left));
 
-                                  try {
-                                    recognizedBlocs.blocks
-                                        .firstWhere(
-                                          (e) => e.text.contains('住居地'),
-                                        )
-                                        .text;
-                                    translator
-                                        .translate(recognizedBlocs.text)
-                                        .then((value) => {
-                                              translatedBloc = value.text,
-                                              setState(() {})
-                                            });
-                                  } catch (e) {}
-                                  setState(() {});
-                                },
-                                child: const Text("Pick From Gallery")),
+                            //       try {
+                            //         recognizedBlocs.blocks
+                            //             .firstWhere(
+                            //               (e) => e.text.contains('住居地'),
+                            //             )
+                            //             .text;
+                            //         translator
+                            //             .translate(recognizedBlocs.text)
+                            //             .then((value) => {
+                            //                   translatedBloc = value.text,
+                            //                   setState(() {})
+                            //                 });
+                            //       } catch (e) {}
+                            //       setState(() {});
+                            //     },
+                            //     child: const Text("Pick From Gallery")),
+
                             if (recognizedBlocs.blocks.isNotEmpty) ...[
                               SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
@@ -455,50 +527,79 @@ class _CameraPartState extends State<CameraPart> {
                                     children: [
                                       Image.file(
                                         File(imagePath),
+                                        fit: BoxFit.fitWidth,
                                       ),
                                       ...recognizedBlocs.blocks
                                           .map((e) => Positioned(
                                               top: e.boundingBox.top,
                                               left: e.boundingBox.left,
-                                              child: Text(
-                                                recognizedBlocs.blocks
-                                                        .indexOf(e)
-                                                        .toString() +
-                                                    // "," + ,${e.boundingBox.top}, ${e.boundingBox.left}
-                                                    e.text,
-                                                style: const TextStyle(
-                                                    color: Colors.black,
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w600,
-                                                    shadows: [
-                                                      Shadow(
-                                                          color: Colors.grey,
-                                                          offset:
-                                                              Offset(-1, -1)),
-                                                      Shadow(
-                                                          color: Colors.white,
-                                                          offset: Offset(1, 1))
-                                                    ]),
+                                              child: Column(
+                                                children: [
+                                                  // Text(
+                                                  //   e.boundingBox.toString(),
+                                                  //   style: TextStyle(
+                                                  //     fontSize: 8,
+                                                  //     color: Colors.red,
+                                                  //     shadows: [
+                                                  //       Shadow(
+                                                  //           color: Colors.grey,
+                                                  //           offset:
+                                                  //               Offset(-1, -1)),
+                                                  //       Shadow(
+                                                  //           color: Colors.white,
+                                                  //           offset:
+                                                  //               Offset(1, 1))
+                                                  //     ],
+                                                  //   ),
+                                                  // ),
+                                                  Container(
+                                                    decoration: BoxDecoration(
+                                                        // border: Border.all(
+                                                        //     color: Colors.white),
+                                                        ),
+                                                    child: Text(
+                                                      "${recognizedBlocs.blocks.indexOf(e)}.${e.text}",
+                                                      style: const TextStyle(
+                                                          color: Colors.black,
+                                                          fontSize: 8,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          shadows: [
+                                                            Shadow(
+                                                                color:
+                                                                    Colors.grey,
+                                                                offset: Offset(
+                                                                    -1, -1)),
+                                                            Shadow(
+                                                                color: Colors
+                                                                    .white,
+                                                                offset: Offset(
+                                                                    1, 1))
+                                                          ]),
+                                                    ),
+                                                  ),
+                                                ],
                                               )))
                                           .toList()
                                     ],
                                   )),
                                 ),
                               ),
-                              // Text("Card Number"),
-                              // Text(recognizedBlocs.blocks
-                              //     .firstWhere((element) => element.text.contains(
-                              //         "TJ9596562OFA" // '番号' // widget.cardNumber,
-                              //         ))
-                              //     .text),
+                              const Text("Card Number"),
+                              Text(recognizedBlocs.blocks
+                                  .firstWhere(
+                                      (element) => element.text.contains(
+                                            widget.cardNumber,
+                                          ))
+                                  .text),
                               const Text("Date of Birth"),
 
                               Text(dob.toString()),
-                              Text("NAME"),
+                              const Text("NAME"),
                               Text(name),
-                              Text("Address"),
+                              const Text("Address"),
                               Text(address),
-                              Text("Peroid of Expiry"),
+                              const Text("Peroid of Expiry"),
                               Text(expiry),
                               // Text(replaceFirstWord(name, "")),
                               // // Text("Other Dates" + "\n" + dates.toString()),
@@ -507,6 +608,8 @@ class _CameraPartState extends State<CameraPart> {
                               // Text(location_en),
                               // Text(translatedBloc),
                               // Text(recognizedBlocs.text),
+                              ...recognizedBlocs.blocks.map((e) => Text(
+                                  "${recognizedBlocs.blocks.indexOf(e)}\n\n${e.text}"))
                               // Text(newdiff.toString())
                               // Wrap(
                               //   children: [
