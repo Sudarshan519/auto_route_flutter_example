@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
-import pytesseract
+# import pytesseract
+def draw_hollow_rectangle(image, x, y, width, height, color, thickness):
+    cv2.rectangle(image, (x, y), (x + width, y + height), color, thickness)
+
 def get_position_from_blurred_edges(image_path):
     # Read the image
     image = cv2.imread(image_path)
@@ -22,6 +25,7 @@ def get_position_from_blurred_edges(image_path):
     for line in lines:
         x1, y1, x2, y2 = line[0]
         position = (x1, y1, x2, y2)
+        cv2.rectangle(image, (x1, y1), (x2+10, y2+10), (0, 255, 0), 10)
         positions.append(position)
 
     # Extract text on positions using Tesseract OCR
@@ -36,8 +40,10 @@ def get_position_from_blurred_edges(image_path):
 
         if x2 > x1 and y2 > y1:
             roi = gray[y1:y2, x1:x2]
-            text = pytesseract.image_to_string(roi,lang='jpn')
-            print("Text on position", position, ":", text)
+            
+ 
+            # text = pytesseract.image_to_string(roi,lang='jpn')
+            # print("Text on position", position, ":", text)
 
 
     # Print the extracted positions
